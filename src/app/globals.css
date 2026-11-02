@@ -152,6 +152,15 @@ a.chip { text-decoration: underline; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; padding: 14px 18px 16px; }
 .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .full { grid-column: 1 / -1; }
+fieldset.property-types { border: 0; padding: 0; margin: 0; min-width: 0; }
+.property-types legend { padding: 0; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.property-type-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.property-type-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 10px; cursor: default; }
+.property-type-option.selected { border-color: var(--maroon); background: var(--maroon-soft); box-shadow: 0 0 0 1px var(--maroon); }
+.property-type-option.disabled { background: var(--sunk); color: var(--ink-3); }
+.property-type-option input { margin-top: 2px; accent-color: var(--maroon); }
+.property-type-option span { display: flex; flex-direction: column; gap: 3px; }
+.property-type-option small { font-size: 12px; font-weight: 400; color: var(--ink-3); }
 label.f, .f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 500; color: var(--ink-2); min-width: 0; }
 .f input:not([type="checkbox"]):not([type="radio"]), .f select, .f textarea, .input { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 8px; padding: 8px 10px; font-size: 15px; width: 100%; min-width: 0; color: var(--ink); }
 .f textarea { resize: vertical; min-height: 84px; }

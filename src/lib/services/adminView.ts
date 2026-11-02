@@ -70,6 +70,7 @@ export function propView(b: Board, p: PropertyDoc) {
     frontage: p.frontage,
     rent: p.rent,
     floorCount: p.floorCount,
+    floorPlanLink: p.floorPlanLink,
     driveLink: p.driveLink,
     notes: p.notes,
     listingStatus: p.listingStatus,

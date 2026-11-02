@@ -54,8 +54,15 @@ export function cleanPropertyInput(d: Input, s: SettingsDoc) {
   const floors = floorsFor((d.floorCount || '') as FloorCount);
   const floorAreas = floors.map((_, i) => Number(d.floorAreas?.[i] ?? 0) || 0);
   const needsDate = CONDITIONS_NEEDING_DATE.includes(d.condition);
+  const floorPlan = sanitizeFloorPlan(d.floorPlan);
+  if (d.floorPlanLink && floorPlan?.plans.length) {
+    throw new ApiError(422, 'Use either a Drive link or the drawn floor plan, not both', {
+      floorPlanLink: 'Use either a Drive link or the drawn floor plan, not both',
+    });
+  }
 
   return {
+    propertyType: d.propertyType,
     city: city.name,
     microMarket: mm?.name ?? '',
     stretch,
@@ -73,7 +80,8 @@ export function cleanPropertyInput(d: Input, s: SettingsDoc) {
     sameLayout: d.sameLayout,
     ceilingHeight: d.ceilingHeight,
     frontage: d.frontage,
-    floorPlan: sanitizeFloorPlan(d.floorPlan),
+    floorPlan,
+    floorPlanLink: d.floorPlanLink,
     rent: d.rent,
     depositMonths: d.depositMonths,
     maintenance: d.maintenance,

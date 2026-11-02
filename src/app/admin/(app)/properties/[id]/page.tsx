@@ -202,6 +202,11 @@ export default async function AdminProperty({ params }: { params: Promise<{ id: 
                   Broker&apos;s map link ↗
                 </a>
               )}
+              {p.floorPlanLink && (
+                <a className="btn small" href={p.floorPlanLink} target="_blank" rel="noreferrer">
+                  Floor plan (Drive) ↗
+                </a>
+              )}
             </div>
             {p.notes && (
               <div style={{ padding: '14px 20px', borderTop: '1px solid var(--line)' }}>

@@ -65,6 +65,7 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
   const [hits, setHits] = useState<BrandHit[]>([]);
   const [showHits, setShowHits] = useState(false);
   const [more, setMore] = useState(false);
+  const [selectedState, setSelectedState] = useState('');
   const [cities, setCities] = useState<string[]>([]);
   const [mms, setMms] = useState<Record<string, string[]>>({});
   const [rows, setRows] = useState<Record<string, Row>>({});
@@ -98,6 +99,8 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
   };
 
   const keys = useMemo(() => cities.flatMap((c) => (mms[c] ?? []).map((m) => `${c}|${m}`)), [cities, mms]);
+  const states = useMemo(() => [...new Set(locations.filter((c) => c.enabled).map((c) => c.state))].sort(), [locations]);
+  const enabledCities = useMemo(() => locations.filter((c) => c.enabled && c.state === selectedState), [locations, selectedState]);
   useEffect(() => {
     setRows((old) => {
       const next: Record<string, Row> = {};
@@ -130,7 +133,10 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
       setFields(e);
       if (Object.keys(e).length) return toast('Fill the highlighted brand fields first', 'error');
     }
-    if (step === 2 && !keys.length) return toast('Pick at least one micro market', 'error');
+    if (step === 2) {
+      if (!selectedState) return toast('Pick a state', 'error');
+      if (!keys.length) return toast('Pick at least one micro market', 'error');
+    }
     setStep((s) => s + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -168,6 +174,7 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
         const [city, microMarket] = k.split('|') as [string, string];
         const r = rows[k]!;
         return {
+          state: locations.find((c) => c.name === city)?.state ?? selectedState,
           city,
           microMarket,
           stretches: r.stretches,
@@ -205,7 +212,6 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
     }
   };
 
-  const enabledCities = locations.filter((c) => c.enabled);
   const fe = (k: string) => fields[k];
 
   return (
@@ -403,10 +409,27 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
       {step === 2 && (
         <>
           <section className="form-sec">
-            <h3>Cities</h3>
+            <h3>Where</h3>
             <div className="grid">
+              <Field label="State" req error={fields.state}>
+                <select
+                  value={selectedState}
+                  onChange={(e) => {
+                    setSelectedState(e.target.value);
+                    setCities([]);
+                    setMms({});
+                    setRows({});
+                  }}
+                >
+                  <option value="">Choose a state</option>
+                  {states.map((state) => (
+                    <option key={state}>{state}</option>
+                  ))}
+                </select>
+              </Field>
+              <span />
               <div className="full">
-                <Chips options={enabledCities.map((c) => c.name)} value={cities} onChange={setCities} />
+                {selectedState ? <Chips options={enabledCities.map((c) => c.name)} value={cities} onChange={setCities} /> : <span className="muted">Choose a state to see its cities.</span>}
               </div>
             </div>
           </section>
@@ -477,6 +500,7 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
             <table className="t">
               <thead>
                 <tr>
+                  <th>State</th>
                   <th>City</th>
                   <th>Micro market</th>
                   <th>Stretches</th>
@@ -496,6 +520,7 @@ export function RequirementWizard({ locations: initialLocations }: { locations: 
                   const ov = (['carpetMin', 'carpetMax', 'rentMin', 'rentMax'] as const).some((f) => r[f] !== '' && r[f] !== v[f]);
                   return [
                     <tr key={k}>
+                      <td>{locations.find((x) => x.name === c)?.state}</td>
                       <td>{c}</td>
                       <td>
                         <b>{m}</b>

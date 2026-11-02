@@ -160,6 +160,7 @@ export const stretchOverride = z
 
 export const locationRow = z
   .object({
+    state: str(80).min(1, 'Pick a state'),
     city: str(60).min(1),
     microMarket: str(80).min(1),
     stretches: z.array(str(80)).max(30).default([]),
@@ -191,6 +192,7 @@ const enumOrEmpty = <T extends readonly [string, ...string[]]>(vals: T) => z.uni
 
 export const propertyDraftSchema = z
   .object({
+    propertyType: z.literal('retail').default('retail'),
     city: str(60),
     microMarket: optStr(80),
     stretch: optStr(80),
@@ -209,6 +211,7 @@ export const propertyDraftSchema = z
     ceilingHeight: optNum('Ceiling height', 200),
     frontage: optNum('Frontage', 2000),
     floorPlan: z.any().optional().nullable(),
+    floorPlanLink: optStr(600),
     rent: optNum('Quoted rent', 1e5),
     depositMonths: optNum('Security deposit', 120),
     maintenance: optNum('Maintenance'),
@@ -242,6 +245,17 @@ export const propertyDraftSchema = z
         path: ['driveLink'],
         message: d.driveLink.startsWith('https://drive.google.com/') ? 'Paste the folder link, not a file link' : `The link must start with ${DRIVE_FOLDER_PREFIX}`,
       });
+    }
+    if (d.floorPlanLink && !/^https:\/\/drive\.google\.com\//.test(d.floorPlanLink)) {
+      ctx.addIssue({ code: 'custom', path: ['floorPlanLink'], message: 'Use a Google Drive link starting with https://drive.google.com/' });
+    }
+    const hasDrawnPlan =
+      d.floorPlan !== null &&
+      typeof d.floorPlan === 'object' &&
+      Array.isArray((d.floorPlan as { plans?: unknown[] }).plans) &&
+      (d.floorPlan as { plans: unknown[] }).plans.length > 0;
+    if (d.floorPlanLink && hasDrawnPlan) {
+      ctx.addIssue({ code: 'custom', path: ['floorPlanLink'], message: 'Use either a Drive link or the drawn floor plan, not both' });
     }
     if (d.availableDate && Number.isNaN(Date.parse(d.availableDate))) {
       ctx.addIssue({ code: 'custom', path: ['availableDate'], message: 'Enter a valid date' });

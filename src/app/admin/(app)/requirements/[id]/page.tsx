@@ -80,6 +80,7 @@ export default async function AdminRequirement({ params }: { params: Promise<{ i
           locations={locationLists(settings)}
           initial={{
             status: r.status,
+            state: r.state,
             city: r.city,
             microMarket: r.microMarket,
             stretches: r.stretches ?? [],

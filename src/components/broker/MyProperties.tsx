@@ -148,6 +148,11 @@ function PropertyCard({ p, reqs, suggested }: { p: BrokerProperty; reqs: PublicR
         ) : (
           <span className="chip warn">No Drive link</span>
         )}
+        {p.floorPlanLink && (
+          <a className="chip" href={p.floorPlanLink} target="_blank" rel="noreferrer">
+            Floor plan ↗
+          </a>
+        )}
       </div>
       <div className="row-flex">
         {draft ? (

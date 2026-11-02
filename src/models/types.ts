@@ -211,6 +211,7 @@ export interface PropertyDoc {
   state: 'draft' | 'submitted' | 'merged';
   mergedInto: Id | null;
   submittedAt: Date | null;
+  propertyType: 'retail';
   city: string;
   microMarket: string;
   stretch: string;
@@ -229,6 +230,7 @@ export interface PropertyDoc {
   ceilingHeight: number | null;
   frontage: number | null;
   floorPlan: unknown;
+  floorPlanLink: string;
   rent: number | null;
   depositMonths: number | null;
   maintenance: number | null;

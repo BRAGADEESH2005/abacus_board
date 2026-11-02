@@ -253,6 +253,7 @@ const PropertySchema = S(
     mergedInto: { type: ObjectId, ref: 'Property', default: null },
     submittedAt: { type: Date, default: null, immutable: (doc: { submittedAt?: Date | null }) => Boolean(doc.submittedAt) },
     // A Basics
+    propertyType: { type: String, enum: ['retail'], default: 'retail' },
     city: { type: String, required: true },
     microMarket: { type: String, default: '' },
     stretch: { type: String, default: '' },
@@ -273,6 +274,7 @@ const PropertySchema = S(
     ceilingHeight: { type: Number, default: null },
     frontage: { type: Number, default: null },
     floorPlan: { type: Schema.Types.Mixed, default: null },
+    floorPlanLink: { type: String, default: '' },
     // D Commercials and landlord
     rent: { type: Number, default: null },
     depositMonths: { type: Number, default: null },

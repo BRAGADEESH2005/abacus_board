@@ -20,7 +20,7 @@ export function StartProperty({ locations, defaultCity, defaultMm, suggestFor, d
     setBusy(true);
     setError('');
     try {
-      const r = await api<{ id: string }>('/api/broker/properties', { body: { city, microMarket: mm } });
+      const r = await api<{ id: string }>('/api/broker/properties', { body: { propertyType: 'retail', city, microMarket: mm } });
       router.push(`/broker/properties/${r.id}/edit${suggestFor ? `?suggestFor=${suggestFor}` : ''}`);
     } catch (e) {
       setError((e as ApiErr).message);
@@ -33,6 +33,25 @@ export function StartProperty({ locations, defaultCity, defaultMm, suggestFor, d
       <section className="form-sec">
         <h3>Start a new property</h3>
         <div className="grid">
+          <fieldset className="full property-types">
+            <legend>Property type</legend>
+            <div className="property-type-options">
+              <div className="property-type-option selected">
+                <input type="radio" name="propertyType" value="retail" checked readOnly />
+                <span>
+                  <strong>Retail Space</strong>
+                  <small>Available now</small>
+                </span>
+              </div>
+              <div className="property-type-option disabled">
+                <input type="radio" name="propertyType" value="office" disabled />
+                <span>
+                  <strong>Office Space</strong>
+                  <small>Will be opened soon</small>
+                </span>
+              </div>
+            </div>
+          </fieldset>
           <Field label="City" req>
             <select value={city} onChange={(e) => (setCity(e.target.value), setMm(''))}>
               {locations.map((l) => (

@@ -10,7 +10,14 @@ import { z } from 'zod';
 export const POST = handler(async (req) => {
   await connectDB();
   const s = await apiBroker();
-  const body = await parseBody(req, z.object({ city: z.string().trim().min(1, 'Pick a city'), microMarket: z.string().trim().optional().default('') }));
+  const body = await parseBody(
+    req,
+    z.object({
+      propertyType: z.literal('retail').default('retail'),
+      city: z.string().trim().min(1, 'Pick a city'),
+      microMarket: z.string().trim().optional().default(''),
+    }),
+  );
   const settings = await getSettings();
   const city = settings.cities.find((c) => c.enabled && c.name === body.city);
   if (!city) throw new ApiError(422, 'Pick a city from the list', { city: 'Pick a city from the list' });
@@ -18,6 +25,6 @@ export const POST = handler(async (req) => {
   const drafts = await Property.countDocuments({ broker: s.broker._id, state: 'draft' });
   if (drafts >= 20) throw new ApiError(429, 'You have 20 unfinished drafts. Finish or delete some first.');
   const code = await nextPropertyCode(city.code);
-  const p = await Property.create({ code, broker: s.broker._id, city: city.name, microMarket: mm, state: 'draft' });
+  const p = await Property.create({ code, broker: s.broker._id, propertyType: body.propertyType, city: city.name, microMarket: mm, state: 'draft' });
   return ok({ id: p._id.toString(), code });
 });

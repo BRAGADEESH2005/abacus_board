@@ -34,6 +34,7 @@ const n = (v: number | null | undefined) => (v === null || v === undefined ? '' 
 
 function initial(p: BrokerProperty) {
   return {
+    propertyType: p.propertyType,
     city: p.city,
     microMarket: p.microMarket,
     stretch: p.stretch,
@@ -52,6 +53,7 @@ function initial(p: BrokerProperty) {
     ceilingHeight: n(p.ceilingHeight),
     frontage: n(p.frontage),
     floorPlan: (p.floorPlan as FloorPlanValue) ?? null,
+    floorPlanLink: p.floorPlanLink,
     rent: n(p.rent),
     depositMonths: n(p.depositMonths),
     maintenance: n(p.maintenance),
@@ -535,6 +537,22 @@ export function PropertyForm({
           </Field>
           <div className="full f">
             <span className="lab">C7 Dimensions and shape</span>
+            <Field
+              label="Floor plan Drive link"
+              className="full"
+              error={err('floorPlanLink') ?? (f.floorPlanLink && !/^https:\/\/drive\.google\.com\//.test(f.floorPlanLink) ? 'Use a Google Drive link' : undefined)}
+              hint="Optional. Use this or the drawing below, not both. Share it as Anyone with the link: Viewer."
+            >
+              <input
+                aria-label="Floor plan Drive link"
+                value={f.floorPlanLink}
+                onChange={(e) => {
+                  const value = e.target.value.trim();
+                  setF((x) => ({ ...x, floorPlanLink: value, floorPlan: value ? null : x.floorPlan }));
+                }}
+                placeholder="https://drive.google.com/…"
+              />
+            </Field>
             <FloorPlanHelper
               value={f.floorPlan}
               floors={floors}
@@ -543,7 +561,7 @@ export function PropertyForm({
               carpet={carpet || null}
               frontage={Number(f.frontage) || null}
               videoUrl={measureVideoUrl}
-              onChange={(v) => set('floorPlan', v)}
+              onChange={(v) => setF((x) => ({ ...x, floorPlan: v, floorPlanLink: v ? '' : x.floorPlanLink }))}
             />
           </div>
         </div>

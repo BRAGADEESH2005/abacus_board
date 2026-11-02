@@ -12,6 +12,7 @@ import type { LocationList } from '@/lib/settings';
 type Ov = { stretch: string; carpetMin: number; carpetMax: number; rentMin: number; rentMax: number };
 type Init = {
   status: 'open' | 'on_hold' | 'closed';
+  state: string;
   city: string;
   microMarket: string;
   stretches: string[];
@@ -99,6 +100,7 @@ export function RequirementEditForm({ id, initial, locations }: { id: string; in
       internalNotes: f.internalNotes,
     };
     const row = {
+      state: f.state,
       city: f.city,
       microMarket: f.microMarket,
       stretches: f.stretches,

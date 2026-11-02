@@ -49,7 +49,7 @@ export function AdminMapView({ props, circles, brokers }: { props: PropView[]; c
         lat: p.lat!,
         lng: p.lng!,
         color: STAGE_COLOR[p.stage] ?? '#7F1416',
-        popup: `<div style="font:13px/1.45 'IBM Plex Sans',sans-serif;min-width:200px"><b style="font-family:monospace">${esc(p.code)}</b><br>${esc(p.brokerName)}<br>${num(p.carpetArea)} sq ft · ${inr(p.rent)}/sq ft<br>Stage: <b>${esc(p.stage)}</b><br>${p.driveLink ? `<a href="${esc(p.driveLink)}" target="_blank" rel="noreferrer">Photos</a> · ` : ''}<a href="/admin/properties/${p.id}">Open property</a>${p.notes ? `<div style="margin-top:4px;color:#5E5F5A;max-height:80px;overflow:auto">${esc(p.notes.slice(0, 300))}</div>` : ''}</div>`,
+        popup: `<div style="font:13px/1.45 'IBM Plex Sans',sans-serif;min-width:200px"><b style="font-family:monospace">${esc(p.code)}</b><br>${esc(p.brokerName)}<br>${num(p.carpetArea)} sq ft · ${inr(p.rent)}/sq ft<br>Stage: <b>${esc(p.stage)}</b><br>${p.driveLink ? `<a href="${esc(p.driveLink)}" target="_blank" rel="noreferrer">Photos</a> · ` : ''}${p.floorPlanLink ? `<a href="${esc(p.floorPlanLink)}" target="_blank" rel="noreferrer">Floor plan</a> · ` : ''}<a href="/admin/properties/${p.id}">Open property</a>${p.notes ? `<div style="margin-top:4px;color:#5E5F5A;max-height:80px;overflow:auto">${esc(p.notes.slice(0, 300))}</div>` : ''}</div>`,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [shown.map((p) => p.id + p.stage).join()],
@@ -123,6 +123,11 @@ export function AdminMapView({ props, circles, brokers }: { props: PropView[]; c
                 {sel.driveLink && (
                   <a className="btn tiny" href={sel.driveLink} target="_blank" rel="noreferrer">
                     Photos ↗
+                  </a>
+                )}
+                {sel.floorPlanLink && (
+                  <a className="btn tiny" href={sel.floorPlanLink} target="_blank" rel="noreferrer">
+                    Floor plan ↗
                   </a>
                 )}
                 <Link className="btn tiny primary" href={`/admin/properties/${sel.id}`}>

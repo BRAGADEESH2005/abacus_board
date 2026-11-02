@@ -46,6 +46,7 @@ export async function upsertBrand(b: BrandIn, s: AdminSession) {
 function resolveRow(settings: SettingsDoc, row: Row) {
   const city = settings.cities.find((c) => c.name === row.city);
   if (!city) throw new ApiError(422, `Unknown city ${row.city}`);
+  if (city.state !== row.state) throw new ApiError(422, `State does not match ${row.city}`, { state: 'Pick the state that contains this city' });
   const mm = city.microMarkets.find((m) => m.name === row.microMarket);
   if (!mm) throw new ApiError(422, `Unknown micro market ${row.microMarket} in ${row.city}`);
   const stretches = row.stretches.filter((s) => (mm.stretches ?? []).includes(s));
@@ -170,7 +171,7 @@ export async function editRequirement(id: string, values: Values, row: Row, stat
   const req = await Requirement.findById(id);
   const priv = await RequirementPrivate.findOne({ requirement: id });
   if (!req || !priv) throw new ApiError(404, 'That requirement was not found.');
-  if (row.city !== req.city || row.microMarket !== req.microMarket) throw new ApiError(422, 'City and micro market cannot change. Post a new requirement instead.');
+  if (row.state !== req.state || row.city !== req.city || row.microMarket !== req.microMarket) throw new ApiError(422, 'State, city and micro market cannot change. Post a new requirement instead.');
   const settings = await getSettings();
   const { stretches, overrides } = resolveRow(settings, row);
   const brand = await Brand.findById(priv.brand);
