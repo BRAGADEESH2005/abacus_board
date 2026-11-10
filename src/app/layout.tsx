@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: { default: 'Requirement Board · Abacus Spaces', template: '%s · Abacus Requirement Board' },
-  description: 'Abacus Spaces requirement board for retail property brokers and the Abacus team.',
+  description: 'Abacus Spaces requirement board for retail property consultants and the Abacus team.',
   robots: { index: false, follow: false },
   icons: { icon: '/abacus-logo.png' },
 };

@@ -11,20 +11,32 @@ import { loadBrokerProperties, loadBrokerSuggestions, loadOpenRequirements, save
 import { Avatar } from '@/components/ui/Avatar';
 import { LevelChip } from '@/components/ui/Badges';
 import { Celebration } from '@/components/broker/Celebration';
+import { PropertiesRequired, type DemandRow } from '@/components/broker/PropertiesRequired';
+import { citiesOf, computeDigest, digestLines } from '@/lib/digest';
+import { loadDigestContext } from '@/lib/services/weekly';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
 export default async function BrokerDashboard() {
   const { broker } = await pageBroker();
-  const [settings, props, suggestions, open, saved, lvl] = await Promise.all([
+  // Everything loads side by side; the weekly summary starts as soon as the requirements are in.
+  const openP = loadOpenRequirements();
+  const [settings, props, suggestions, open, saved, lvl, ctx] = await Promise.all([
     getSettings(),
     loadBrokerProperties(broker._id),
     loadBrokerSuggestions(broker._id),
-    loadOpenRequirements(),
+    openP,
     savedIds(broker._id),
     computeLevel(broker),
+    openP.then((o) => loadDigestContext({ reqs: o.requirements, demand: o.demand })),
   ]);
-  const myCities = new Set([broker.city, ...(broker.microMarkets ?? []).map((m) => m.city)]);
+  const myCities = citiesOf(broker);
+  const digest = computeDigest(
+    myCities,
+    ctx,
+    props,
+    suggestions.map((s) => ({ requirementId: s.requirementId, taken: s.response === 'Taken forward' })),
+  );
   const posted = props.filter((p) => p.state !== 'draft');
   const drafts = props.filter((p) => p.state === 'draft');
   const reqs = open.requirements;
@@ -38,20 +50,20 @@ export default async function BrokerDashboard() {
     matched: posted.filter((p) => p.matched).length,
     reconfirm: posted.filter((p) => p.state === 'submitted' && p.listingStatus === 'needs_reconfirm').length,
   };
-  // Where we need properties: state > city > locality, with counts.
-  const tree = new Map<string, Map<string, Map<string, number>>>();
+  // Properties Required: open requirements per state, city and micro market.
+  const demandMap = new Map<string, DemandRow>();
   for (const r of reqs) {
-    if (!tree.has(r.state)) tree.set(r.state, new Map());
-    const c = tree.get(r.state)!;
-    if (!c.has(r.city)) c.set(r.city, new Map());
-    const l = c.get(r.city)!;
-    l.set(r.microMarket, (l.get(r.microMarket) ?? 0) + 1);
+    const k = `${r.state}|${r.city}|${r.microMarket}`;
+    const row = demandMap.get(k) ?? { state: r.state, city: r.city, microMarket: r.microMarket, count: 0 };
+    row.count++;
+    demandMap.set(k, row);
   }
+  const contributionPct = digest.openInCity ? Math.round((digest.suggestedReqsInCity / digest.openInCity) * 100) : 0;
   const ring = profileCompleteness({ ...broker, avatarFileId: broker.avatarFileId ? String(broker.avatarFileId) : null }, whatsappEnabled());
   const leveledUp = LEVEL_ORDER.indexOf(lvl.level as never) > LEVEL_ORDER.indexOf(broker.levelSeen as never);
   const tiles: { v: number; k: string; href: string; alert?: boolean }[] = [
     { v: counts.open, k: 'Open requirements', href: '/broker/requirements' },
-    { v: counts.mine, k: 'In your cities', href: '/broker/requirements?mine=1' },
+    { v: counts.mine, k: 'In your city', href: '/broker/requirements?mine=1' },
     { v: counts.saved, k: 'Saved requirements', href: '/broker/requirements?saved=1' },
     { v: counts.uploaded, k: 'Properties uploaded', href: '/broker/properties' },
     { v: counts.active, k: 'Active listings', href: '/broker/properties?filter=active' },
@@ -96,6 +108,40 @@ export default async function BrokerDashboard() {
         ))}
       </div>
 
+      <div className="contrib">
+        <p>
+          {digest.openInCity ? (
+            <>
+              You have suggested properties for <b>{digest.suggestedReqsInCity}</b> of the <b>{digest.openInCity}</b> requirements in your city.
+            </>
+          ) : (
+            'There are no open requirements in your city right now.'
+          )}
+        </p>
+        {digest.openInCity > 0 && (
+          <div className="bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={contributionPct} aria-label="Your contribution in your city">
+            <i style={{ width: `${contributionPct}%` }} />
+          </div>
+        )}
+      </div>
+
+      <section className="panel weekly">
+        <div className="ph">
+          <h3>Your week</h3>
+          <span className="muted small">The same summary is emailed to you every Monday.</span>
+        </div>
+        <div className="pb">
+          <ul>
+            {digestLines(digest).map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+          <p className="nudge" style={{ margin: '10px 0 0' }}>
+            <Link href={digest.nudge.href}>{digest.nudge.text}</Link>
+          </p>
+        </div>
+      </section>
+
       {drafts.length > 0 && (
         <div className="notice amber" style={{ marginTop: 14 }}>
           You have {drafts.length} unfinished draft{drafts.length === 1 ? '' : 's'}:{' '}
@@ -109,40 +155,8 @@ export default async function BrokerDashboard() {
         </div>
       )}
 
-      <h2>Where we need properties</h2>
-      {tree.size === 0 ? (
-        <div className="empty">
-          <b>No open requirements right now</b>
-          Abacus will email you when a requirement is posted in your cities.
-        </div>
-      ) : (
-        <div className="tree">
-          {[...tree.entries()]
-            .sort((a, b) => [...b[1].values()].reduce((s, m) => s + [...m.values()].reduce((x, y) => x + y, 0), 0) - [...a[1].values()].reduce((s, m) => s + [...m.values()].reduce((x, y) => x + y, 0), 0))
-            .map(([state, cities]) => {
-              const stateCount = [...cities.values()].reduce((s, m) => s + [...m.values()].reduce((x, y) => x + y, 0), 0);
-              return (
-                <details key={state} open>
-                  <summary>
-                    {state} <span className="count">{stateCount}</span>
-                  </summary>
-                  {[...cities.entries()].map(([city, locs]) => (
-                    <div className="city" key={city}>
-                      <b>{city}</b> <span className="count">{[...locs.values()].reduce((x, y) => x + y, 0)}</span>
-                      <div className="locs">
-                        {[...locs.entries()].map(([loc, c]) => (
-                          <Link key={loc} href={`/broker/requirements?city=${encodeURIComponent(city)}&mm=${encodeURIComponent(loc)}`}>
-                            {loc} ({c})
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </details>
-              );
-            })}
-        </div>
-      )}
+      <h2>Properties Required</h2>
+      <PropertiesRequired rows={[...demandMap.values()]} />
     </main>
   );
 }

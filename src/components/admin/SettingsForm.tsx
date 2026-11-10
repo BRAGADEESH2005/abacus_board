@@ -15,6 +15,7 @@ type S = {
   sopShare: string;
   notesHelp: string;
   measureVideoUrl: string;
+  drawVideoUrl: string;
   levels: { key: string; name: string; threshold: number }[];
 };
 
@@ -76,6 +77,9 @@ export function SettingsForm({ initial }: { initial: S }) {
           </Field>
           <Field label="How to measure video link (C7)" error={fields.measureVideoUrl} hint="The 40 second animation. Leave blank to hide the link.">
             <input value={f.measureVideoUrl} onChange={(e) => set('measureVideoUrl', e.target.value)} placeholder="https://…" />
+          </Field>
+          <Field label="How to draw the floor plan video link (C7)" error={fields.drawVideoUrl} hint="Shown next to Draw the floor plan. Leave blank to hide the link.">
+            <input value={f.drawVideoUrl} onChange={(e) => set('drawVideoUrl', e.target.value)} placeholder="https://…" />
           </Field>
           <Field label="SOP tab 1 intro" className="full">
             <textarea rows={2} value={f.sopIntro} onChange={(e) => set('sopIntro', e.target.value)} />

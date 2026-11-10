@@ -409,3 +409,17 @@ It runs when an admin opens the board (throttled to once every 5 minutes) and fr
 - **Seeded micro markets** are the localities named in the docs (Anna Nagar, Porur, T Nagar, Velachery, RS Puram, Gandhipuram, Perundurai Road, MG Road, Edappally). Their coordinates are approximate. Correct them in Settings.
 - **Scale.** Admin screens load the working set into memory per request. That is fine for hundreds of listings and tens of brokers. Past roughly 10,000 properties, move the dashboard maths into aggregation pipelines.
 - **Not exercised live in development:** a real MongoDB server, real SMTP delivery, WhatsApp, OpenStreetMap tiles and Google Maps short link resolution. The sandbox could not reach those hosts. Emails went to a local SMTP sink. The database ran on a wire compatible in-memory server, which covers the same Mongoose queries but is not MongoDB itself. Run one pass on your own MongoDB and mailbox before going live.
+
+---
+
+## 9. Consultant dashboard changes (10 Nov 2026)
+
+The consultant side (pages under `/broker`) now says **Consultant** instead of Broker, and **city** instead of cities. Routes, API paths and database names still use `broker`, so nothing breaks for existing accounts.
+
+- **Speed.** The database is in Mumbai (AWS `ap-south-1`), so `vercel.json` now pins the server functions to Vercel's Mumbai region (`bom1`). Before this they ran in the default US region and every query crossed the world. The session and settings are also read once per request instead of twice, dashboard queries run side by side, and `/broker/loading.tsx` shows a placeholder the moment a consultant clicks.
+- **C7 floor plan is required** before posting (Drive link or every floor drawn). This also applies when saving edits to an already posted listing that has no floor plan.
+- **Landlord go ahead upload is removed.** Section D has a Commission block instead: Confirmed from landlord (Yes/No) and How many days (only when Yes). Old go ahead files stay visible to admins.
+- **How to draw video.** Paste its link in Settings → "How to draw the floor plan video link (C7)". It shows next to Draw the floor plan once set.
+- **Delete property** on a posted listing hides it from the consultant and from matching, but keeps the record (with `deletedAt`) so upload history and pitches stay intact. Admins see a note on the property page.
+- **Mark as rented out** moves a listing to the Let out or withdrawn tab. **Posted on** date shows on every card (from `submittedAt`, which never changes).
+- **Weekly summary email** goes to every active consultant from the daily cron, on its first run each India week (Monday 9 am). Each consultant is sent once per week even if a run is retried. The same summary shows on the dashboard under "Your week".

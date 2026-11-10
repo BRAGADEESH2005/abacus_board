@@ -8,10 +8,11 @@ import { removeUpload } from '@/lib/uploads';
 import { flagDuplicates } from '@/lib/services/duplicates';
 import { Property, Suggestion, Pitch, type PropertyDoc } from '@/models';
 import { cleanPropertyInput } from '@/lib/services/propertyInput';
+import { activity } from '@/lib/services/notify';
 
 async function own(id: string, brokerId: unknown) {
   const p = await Property.findById(id);
-  if (!p || String(p.broker) !== String(brokerId)) throw new ApiError(404, 'That property was not found.');
+  if (!p || String(p.broker) !== String(brokerId) || p.deletedAt) throw new ApiError(404, 'That property was not found.');
   return p;
 }
 
@@ -35,12 +36,22 @@ export const PATCH = handler(async (req, ctx) => {
   return ok({ ok: true, savedAt: new Date().toISOString() });
 });
 
-/** Only unfinished drafts can be deleted; posted listings are kept for the record (mark Withdrawn instead). */
+/**
+ * Delete. A draft is removed for good. A posted listing disappears for the consultant and drops
+ * out of matching, but the record (with its posted date) is kept so Abacus keeps the upload history
+ * and any pitches stay intact.
+ */
 export const DELETE = handler(async (_req, ctx) => {
   await connectDB();
   const s = await apiBroker();
   const p = await own(requireId((await ctx.params).id, 'property'), s.broker._id);
-  if (p.state !== 'draft') throw new ApiError(409, 'Posted properties are kept for the record. Mark it Withdrawn instead.');
+  if (p.state !== 'draft') {
+    p.deletedAt = new Date();
+    p.listingStatus = 'withdrawn';
+    await p.save();
+    await activity(`${p.code} deleted by the consultant`, `${p.microMarket}, ${p.city} · ${s.broker.fullName}`, `/admin/properties/${p._id}`);
+    return ok({ ok: true });
+  }
   const linked = (await Suggestion.countDocuments({ property: p._id })) + (await Pitch.countDocuments({ property: p._id }));
   if (linked) throw new ApiError(409, 'This draft is linked to a requirement and cannot be deleted.');
   await removeUpload(p.goAheadFileId);

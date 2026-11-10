@@ -88,6 +88,8 @@ export function cleanPropertyInput(d: Input, s: SettingsDoc) {
     escalation: d.escalation,
     landlordName: d.landlordName,
     dealtWith: d.dealtWith,
+    commissionConfirmed: d.commissionConfirmed,
+    commissionDays: d.commissionConfirmed === true ? d.commissionDays : null,
     powerKva: d.powerKva,
     powerBackup: d.powerBackup,
     lift: floors.length > 1 ? d.lift : null,

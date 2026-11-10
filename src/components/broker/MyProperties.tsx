@@ -21,7 +21,7 @@ const FILTERS = [
   { k: 'closed', label: 'Let out or withdrawn' },
 ];
 
-function SuggestModal({ p, reqs, suggested, onClose }: { p: BrokerProperty; reqs: PublicRequirement[]; suggested: Set<string>; onClose: () => void }) {
+export function SuggestModal({ p, reqs, suggested, onClose }: { p: BrokerProperty; reqs: PublicRequirement[]; suggested: Set<string>; onClose: () => void }) {
   const toast = useToast();
   const router = useRouter();
   const [picked, setPicked] = useState<string[]>([]);
@@ -99,12 +99,22 @@ function PropertyCard({ p, reqs, suggested }: { p: BrokerProperty; reqs: PublicR
   const [busy, setBusy] = useState(false);
   const [suggest, setSuggest] = useState(false);
   const draft = p.state === 'draft';
+  const closed = ['let_out', 'withdrawn'].includes(p.listingStatus);
 
   const listing = async (action: string) => {
     setBusy(true);
     try {
       await api(`/api/broker/properties/${p.id}/listing`, { body: { action } });
-      toast(action === 'reconfirm' ? 'Thanks. Listing confirmed for another 30 days.' : 'Listing updated', 'success');
+      toast(
+        action === 'reconfirm'
+          ? 'Thanks. Listing confirmed for another 30 days.'
+          : action === 'let_out'
+            ? `${p.code} marked as rented out. It is now under Let out or withdrawn.`
+            : action === 'withdrawn'
+              ? `${p.code} withdrawn. It is now under Let out or withdrawn.`
+              : `${p.code} is available again`,
+        'success',
+      );
       router.refresh();
     } catch (e) {
       toast((e as ApiErr).message, 'error');
@@ -112,10 +122,13 @@ function PropertyCard({ p, reqs, suggested }: { p: BrokerProperty; reqs: PublicR
     setBusy(false);
   };
   const remove = async () => {
-    if (!confirm(`Delete draft ${p.code}? The code will not be reused.`)) return;
+    const msg = draft
+      ? `Delete draft ${p.code}? The code will not be reused.`
+      : `Delete ${p.code}? It will be removed from your properties and from matching. If it was rented to someone else, use Mark as rented out instead.`;
+    if (!confirm(msg)) return;
     try {
       await api(`/api/broker/properties/${p.id}`, { method: 'DELETE' });
-      toast('Draft deleted');
+      toast(draft ? 'Draft deleted' : `${p.code} deleted`);
       router.refresh();
     } catch (e) {
       toast((e as ApiErr).message, 'error');
@@ -127,7 +140,7 @@ function PropertyCard({ p, reqs, suggested }: { p: BrokerProperty; reqs: PublicR
       <div className="top">
         <span className="code big">{p.code}</span>
         <ListingBadge status={p.listingStatus} draft={draft} />
-        <span className="ago">{draft ? `Started ${ago(p.createdAt)}` : `Uploaded ${ago(p.submittedAt)}`}</span>
+        <span className="ago">{draft ? `Draft started ${ago(p.createdAt)}` : `Posted on ${fmtDate(p.submittedAt)}`}</span>
       </div>
       <h3>{[p.buildingName, p.microMarket, p.city].filter(Boolean).join(', ')}</h3>
       <div className="chips">
@@ -166,18 +179,6 @@ function PropertyCard({ p, reqs, suggested }: { p: BrokerProperty; reqs: PublicR
           </>
         ) : (
           <>
-            <select
-              className="input"
-              style={{ width: 'auto', padding: '5px 8px', fontSize: 13 }}
-              value={p.listingStatus === 'needs_reconfirm' ? 'available' : p.listingStatus}
-              onChange={(e) => listing(e.target.value)}
-              disabled={busy}
-              aria-label="Listing status"
-            >
-              <option value="available">Available</option>
-              <option value="let_out">Let out</option>
-              <option value="withdrawn">Withdrawn</option>
-            </select>
             {p.listingStatus === 'needs_reconfirm' && (
               <Button className="small primary" onClick={() => listing('reconfirm')} loading={busy}>
                 Still available
@@ -188,9 +189,30 @@ function PropertyCard({ p, reqs, suggested }: { p: BrokerProperty; reqs: PublicR
                 Suggest for a requirement
               </button>
             )}
-            <Link className="btn small ghost" href={`/broker/properties/${p.id}/edit`}>
-              Edit
-            </Link>
+            {p.state === 'submitted' && (
+              <Link className="btn small" href={`/broker/properties/${p.id}/edit`}>
+                Edit property
+              </Link>
+            )}
+            {closed ? (
+              <Button className="small" onClick={() => listing('available')} loading={busy}>
+                Mark available again
+              </Button>
+            ) : (
+              p.state === 'submitted' && (
+                <>
+                  <Button className="small" onClick={() => listing('let_out')} loading={busy}>
+                    Mark as rented out
+                  </Button>
+                  <Button className="small ghost" onClick={() => listing('withdrawn')} loading={busy}>
+                    Withdraw
+                  </Button>
+                </>
+              )
+            )}
+            <button className="btn small ghost" onClick={remove}>
+              Delete property
+            </button>
           </>
         )}
       </div>

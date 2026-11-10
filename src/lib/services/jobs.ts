@@ -3,6 +3,7 @@ import { Brand, JobRun, Notification, Pitch, Property } from '@/models';
 import { RECONFIRM_DAYS } from '@/lib/constants';
 import { istHour } from '@/lib/domain';
 import { FLAG_LABEL, computeFlags, loadBoard, type Flag, type FlagKind } from './board';
+import { sendWeeklyDigests } from './weekly';
 
 const DAY = 86400000;
 const IST_OFFSET = 5.5 * 3600000;
@@ -47,6 +48,13 @@ export async function runDueJobs(force = false): Promise<{ ran: string[] }> {
   if (istHour(new Date(now)) >= 9 && (await claim(`summary:${today}`))) {
     await dailySummary(istDay(now - DAY));
     ran.push('summary');
+  }
+  // Weekly consultant summary emails. Only from the scheduled cron call (force), never on an
+  // admin page load, so sending email never slows the admin screens down. The first cron run of
+  // each India week (Monday 9 am) sends; a missed Monday is picked up by the next daily run.
+  if (force) {
+    const w = await sendWeeklyDigests(now);
+    if (w.sent || w.failed) ran.push(`weekly:${w.week}:${w.sent} sent${w.failed ? `, ${w.failed} failed` : ''}`);
   }
   return { ran };
 }

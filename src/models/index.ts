@@ -129,6 +129,7 @@ const SettingsSchema = S(
     sopShare: { type: String, default: '' },
     notesHelp: { type: String, default: '' },
     measureVideoUrl: { type: String, default: '' },
+    drawVideoUrl: { type: String, default: '' },
     levels: [{ key: String, name: String, threshold: Number, _id: false }],
   },
   { timestamps: true },
@@ -282,8 +283,12 @@ const PropertySchema = S(
     escalation: { type: String, default: '' },
     landlordName: { type: String, default: '' },
     dealtWith: { type: String, default: '' },
+    // Legacy: landlord go ahead uploads were removed from the form (Nov 2026). Old files stay readable by admins.
     goAheadFileId: { type: ObjectId, default: null },
     goAheadFileName: { type: String, default: '' },
+    // Commission agreed by the landlord: yes/no, and how many days of rent.
+    commissionConfirmed: { type: Boolean, default: null },
+    commissionDays: { type: Number, default: null },
     // E Building and services
     powerKva: { type: Number, default: null },
     powerBackup: { type: Boolean, default: null },
@@ -307,6 +312,8 @@ const PropertySchema = S(
     // Listing and review
     listingStatus: { type: String, enum: ['available', 'needs_reconfirm', 'let_out', 'withdrawn'], default: 'available' },
     lastConfirmedAt: { type: Date, default: null },
+    // Set when the consultant deletes a posted listing. The record is kept so upload history stays complete.
+    deletedAt: { type: Date, default: null },
     staleCount: { type: Number, default: 0 },
     adminStage: { type: String, default: 'Received' },
     adminStageNote: { type: String, default: '' },
@@ -315,6 +322,8 @@ const PropertySchema = S(
   { timestamps: true },
 );
 PropertySchema.index({ broker: 1, state: 1 });
+PropertySchema.index({ broker: 1, createdAt: -1 });
+PropertySchema.index({ broker: 1, submittedAt: -1 });
 PropertySchema.index({ city: 1, microMarket: 1, state: 1 });
 export const Property = model<T.PropertyDoc>('Property', PropertySchema);
 
@@ -329,6 +338,7 @@ const SuggestionSchema = S({
 });
 SuggestionSchema.index({ property: 1, requirement: 1 }, { unique: true });
 SuggestionSchema.index({ broker: 1, createdAt: -1 });
+SuggestionSchema.index({ requirement: 1 });
 export const Suggestion = model<T.SuggestionDoc>('Suggestion', SuggestionSchema);
 
 const PitchSchema = S({

@@ -278,7 +278,27 @@ function PlanEditor({ plan, onChange, carpet, frontage, floorLabel }: { plan: Pl
 }
 
 /** C7 Dimensions and shape. One plan copied to every floor, or one per floor when layouts differ (C5). */
-export function FloorPlanHelper({ value, floors, floorAreas, sameLayout, carpet, frontage, videoUrl, onChange }: { value: FloorPlanValue; floors: string[]; floorAreas: number[]; sameLayout: boolean; carpet: number | null; frontage: number | null; videoUrl?: string; onChange: (v: FloorPlanValue) => void }) {
+export function FloorPlanHelper({
+  value,
+  floors,
+  floorAreas,
+  sameLayout,
+  carpet,
+  frontage,
+  videoUrl,
+  drawVideoUrl,
+  onChange,
+}: {
+  value: FloorPlanValue;
+  floors: string[];
+  floorAreas: number[];
+  sameLayout: boolean;
+  carpet: number | null;
+  frontage: number | null;
+  videoUrl?: string;
+  drawVideoUrl?: string;
+  onChange: (v: FloorPlanValue) => void;
+}) {
   // Compare each drawing with the carpet area of the floor it describes (C4), or the total (C2) for a single floor.
   const carpetFor = (i: number): number | null => {
     if (floors.length <= 1) return carpet;
@@ -298,7 +318,7 @@ export function FloorPlanHelper({ value, floors, floorAreas, sameLayout, carpet,
     <div className="stack">
       <div className="spread">
         <span className="hint">
-          Optional. Stand at the main door facing in: side 1 is the front wall. Walk the walls clockwise, noting each length and whether the next corner turns right or left.
+          Stand at the main door facing in: side 1 is the front wall. Walk the walls clockwise, noting each length and whether the next corner turns right or left.
         </span>
         {videoUrl && (
           <a className="small" href={videoUrl} target="_blank" rel="noreferrer">
@@ -307,18 +327,30 @@ export function FloorPlanHelper({ value, floors, floorAreas, sameLayout, carpet,
         )}
       </div>
       {!open ? (
-        <span>
+        <span className="row-flex">
           <button type="button" className="btn small" onClick={() => setOpen(true)}>
             Draw the floor plan
           </button>
+          {drawVideoUrl && (
+            <a className="small" href={drawVideoUrl} target="_blank" rel="noreferrer">
+              ▶ Watch how to draw it
+            </a>
+          )}
         </span>
       ) : (
-        plans.map((p, i) => (
-          <div key={names[i]} className="panel" style={{ padding: 12 }}>
-            {names.length > 1 && <h3 style={{ marginBottom: 8 }}>{names[i]} floor</h3>}
-            <PlanEditor plan={p} onChange={(np) => update(i, np)} carpet={carpetFor(i)} frontage={frontage} floorLabel={names[i]!} />
-          </div>
-        ))
+        <>
+          {drawVideoUrl && (
+            <a className="small" href={drawVideoUrl} target="_blank" rel="noreferrer">
+              ▶ Watch how to draw the floor plan
+            </a>
+          )}
+          {plans.map((p, i) => (
+            <div key={names[i]} className="panel" style={{ padding: 12 }}>
+              {names.length > 1 && <h3 style={{ marginBottom: 8 }}>{names[i]} floor</h3>}
+              <PlanEditor plan={p} onChange={(np) => update(i, np)} carpet={carpetFor(i)} frontage={frontage} floorLabel={names[i]!} />
+            </div>
+          ))}
+        </>
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Types } from 'mongoose';
@@ -56,7 +57,13 @@ export async function revokeAllSessions(userId: Types.ObjectId) {
   await Session.deleteMany({ userId });
 }
 
-export async function getSession(): Promise<AnySession | null> {
+/**
+ * The layout and the page both ask for the session. cache() makes that one database
+ * lookup per request instead of two.
+ */
+export const getSession = cache(loadSession);
+
+async function loadSession(): Promise<AnySession | null> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -100,7 +107,7 @@ export async function apiAdmin(): Promise<AdminSession> {
 export async function apiBroker(): Promise<BrokerSession> {
   const s = await getSession();
   if (!s) throw new ApiError(401, 'Please log in again.');
-  if (s.type !== 'broker') throw new ApiError(403, 'Brokers only.');
+  if (s.type !== 'broker') throw new ApiError(403, 'Consultants only.');
   return s;
 }
 

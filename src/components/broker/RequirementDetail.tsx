@@ -144,7 +144,7 @@ export function RequirementDetail({ r, saved: savedInit, picker, suggestions, ur
       <div style={{ padding: '14px 20px' }}>
         <h3 style={{ marginBottom: 6 }}>Your suggestions for this requirement</h3>
         {suggestions.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>None yet. Other brokers&apos; suggestions are never shown.</p>
+          <p className="muted" style={{ margin: 0 }}>None yet.</p>
         ) : (
           suggestions.map((s) => (
             <div className="rowline" key={s.id}>

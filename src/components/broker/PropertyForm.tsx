@@ -22,7 +22,7 @@ import {
   floorsFor,
   type FloorCount,
 } from '@/lib/constants';
-import { coordsFromMapsUrl, missingRequired } from '@/lib/domain';
+import { coordsFromMapsUrl, hasFloorPlanInput, missingRequired } from '@/lib/domain';
 import { num } from '@/lib/format';
 import type { BrokerProperty } from '@/lib/services/brokerData';
 import type { LocationList } from '@/lib/settings';
@@ -60,6 +60,8 @@ function initial(p: BrokerProperty) {
     escalation: p.escalation,
     landlordName: p.landlordName,
     dealtWith: p.dealtWith,
+    commissionConfirmed: yn(p.commissionConfirmed),
+    commissionDays: n(p.commissionDays),
     powerKva: n(p.powerKva),
     powerBackup: yn(p.powerBackup),
     lift: yn(p.lift),
@@ -124,12 +126,14 @@ export function PropertyForm({
   locations,
   texts,
   measureVideoUrl,
+  drawVideoUrl,
   suggestFor,
 }: {
   property: BrokerProperty;
   locations: LocationList;
   texts: SopTexts;
   measureVideoUrl: string;
+  drawVideoUrl?: string;
   suggestFor?: { id: string; code: string } | null;
 }) {
   const router = useRouter();
@@ -140,14 +144,13 @@ export function PropertyForm({
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitTried, setSubmitTried] = useState(false);
   const [done, setDone] = useState<{ code: string; nearby: Nearby[] } | null>(null);
   const [suggested, setSuggested] = useState<string[]>([]);
   const [sop, setSop] = useState(false);
   const [notesHelp, setNotesHelp] = useState(false);
   const [pinBusy, setPinBusy] = useState(false);
   const [pinError, setPinError] = useState('');
-  const [goAhead, setGoAhead] = useState<{ id: string | null; name: string }>({ id: property.goAheadFileId, name: property.goAheadFileName });
-  const [uploading, setUploading] = useState(false);
   const submitted = property.state === 'submitted';
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -257,22 +260,9 @@ export function PropertyForm({
     }
   };
 
-  const uploadGoAhead = async (file: File) => {
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      const r = await api<{ fileId: string; name: string }>(`/api/broker/properties/${property.id}/goahead`, { form });
-      setGoAhead({ id: r.fileId, name: r.name });
-      toast('Landlord go ahead uploaded', 'success');
-    } catch (e) {
-      toast((e as ApiErr).message, 'error');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const submit = async () => {
+    setSubmitTried(true);
+    if (!hasFloorPlanInput(f)) document.getElementById('c7')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (missing.length) {
       toast(`Still to fill: ${missing.slice(0, 4).join(', ')}${missing.length > 4 ? ` and ${missing.length - 4} more` : ''}`, 'error');
       return;
@@ -535,13 +525,17 @@ export function PropertyForm({
           <Field label="C6 Ground to ceiling height (ft)" req error={err('ceilingHeight')}>
             {numIn('ceilingHeight')}
           </Field>
-          <div className="full f">
-            <span className="lab">C7 Dimensions and shape</span>
+          <div className="full f" id="c7">
+            <span className="lab">
+              C7 Dimensions and shape<span className="req">*</span>
+            </span>
+            <span className="hint">Required. Do one of the two: paste the floor plan Drive link, or draw the floor plan below.</span>
+            {!hasFloorPlanInput(f) && (submitTried || submitted) && <span className="warnmsg">Paste the floor plan Drive link or draw the floor plan before posting.</span>}
             <Field
               label="Floor plan Drive link"
               className="full"
               error={err('floorPlanLink') ?? (f.floorPlanLink && !/^https:\/\/drive\.google\.com\//.test(f.floorPlanLink) ? 'Use a Google Drive link' : undefined)}
-              hint="Optional. Use this or the drawing below, not both. Share it as Anyone with the link: Viewer."
+              hint="Use this or the drawing below, not both. Share it as Anyone with the link: Viewer."
             >
               <input
                 aria-label="Floor plan Drive link"
@@ -561,6 +555,7 @@ export function PropertyForm({
               carpet={carpet || null}
               frontage={Number(f.frontage) || null}
               videoUrl={measureVideoUrl}
+              drawVideoUrl={drawVideoUrl}
               onChange={(v) => setF((x) => ({ ...x, floorPlan: v, floorPlanLink: v ? '' : x.floorPlanLink }))}
             />
           </div>
@@ -580,7 +575,7 @@ export function PropertyForm({
           <Field label="Escalation">
             <input value={f.escalation} onChange={(e) => set('escalation', e.target.value)} placeholder="15% every 3 years" />
           </Field>
-          <Field label="Landlord name" req error={err('landlordName')} hint="Never shown to other brokers">
+          <Field label="Landlord name" req error={err('landlordName')} hint="Never shown to other consultants">
             <input value={f.landlordName} onChange={(e) => set('landlordName', e.target.value)} />
           </Field>
           <Field label="Who you dealt with" req error={err('dealtWith')}>
@@ -592,34 +587,22 @@ export function PropertyForm({
             </select>
           </Field>
           <div className="full f">
-            <span className="lab">Landlord&apos;s go ahead</span>
-            <span className="hint">A photo of the landlord&apos;s letter or WhatsApp message saying you may market this space (JPG, PNG or PDF, up to 8 MB). It settles commission disputes. Only you and Abacus see it.</span>
-            <div className="row-flex">
-              {goAhead.id ? (
-                <>
-                  <a className="chip" href={`/api/files/${goAhead.id}`} target="_blank" rel="noreferrer">
-                    {goAhead.name || 'Go ahead document'}
-                  </a>
-                  <label className="btn small">
-                    Replace
-                    <input type="file" hidden accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(e) => e.target.files?.[0] && uploadGoAhead(e.target.files[0])} />
-                  </label>
-                  <button
-                    type="button"
-                    className="btn small ghost"
-                    onClick={async () => {
-                      await api(`/api/broker/properties/${property.id}/goahead`, { method: 'DELETE' }).catch(() => null);
-                      setGoAhead({ id: null, name: '' });
-                    }}
-                  >
-                    Remove
-                  </button>
-                </>
-              ) : (
-                <label className="btn small" aria-disabled={uploading}>
-                  {uploading ? 'Uploading…' : 'Upload go ahead'}
-                  <input type="file" hidden accept="image/jpeg,image/png,image/webp,application/pdf" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadGoAhead(e.target.files[0])} />
-                </label>
+            <span className="lab">Commission</span>
+            <div className="grid" style={{ padding: 0 }}>
+              <Field group label="Confirmed from landlord">
+                <YesNo
+                  name="Commission confirmed from landlord"
+                  value={f.commissionConfirmed}
+                  onChange={(v) => {
+                    setF((x) => ({ ...x, commissionConfirmed: v, commissionDays: v === 'yes' ? x.commissionDays : '' }));
+                    setDirty(true);
+                  }}
+                />
+              </Field>
+              {f.commissionConfirmed === 'yes' && (
+                <Field label="How many days" error={err('commissionDays')} hint="Days of rent the landlord has agreed to pay as commission">
+                  {numIn('commissionDays', { step: 1, max: 365, inputMode: 'numeric' })}
+                </Field>
               )}
             </div>
           </div>

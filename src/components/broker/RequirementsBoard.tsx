@@ -116,7 +116,6 @@ export function RequirementsBoard({
       <div className="pagehead">
         <div>
           <h1>Requirements</h1>
-          <p className="lead">Where Abacus needs retail space. Brand names stay with Abacus; post a fitting property and suggest it.</p>
         </div>
       </div>
 
@@ -126,7 +125,7 @@ export function RequirementsBoard({
             <h3>Demand by micro market</h3>
             <label className="row-flex small" style={{ gap: 6 }}>
               <input type="checkbox" checked={demandMine} onChange={(e) => setDemandMine(e.target.checked)} style={{ accentColor: 'var(--maroon)' }} />
-              Only my cities
+              Only my city
             </label>
           </div>
           <div className="demand">
@@ -150,7 +149,7 @@ export function RequirementsBoard({
                 </span>
               </button>
             ))}
-            {shownDemand.length === 0 && <span className="muted">No open requirements in your cities right now.</span>}
+            {shownDemand.length === 0 && <span className="muted">No open requirements in your city right now.</span>}
           </div>
         </section>
       )}
@@ -182,7 +181,7 @@ export function RequirementsBoard({
           ))}
         </select>
         <label className="row-flex small" style={{ gap: 6 }}>
-          <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} style={{ accentColor: 'var(--maroon)' }} /> In my cities
+          <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} style={{ accentColor: 'var(--maroon)' }} /> In my city
         </label>
         <label className="row-flex small" style={{ gap: 6 }}>
           <input type="checkbox" checked={savedOnly} onChange={(e) => setSavedOnly(e.target.checked)} style={{ accentColor: 'var(--maroon)' }} /> Saved only

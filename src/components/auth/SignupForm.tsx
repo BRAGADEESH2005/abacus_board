@@ -79,7 +79,7 @@ export function SignupForm({ cities, whatsapp }: { cities: string[]; whatsapp: b
     <div className="auth">
       <form className="box wide" onSubmit={submit} autoComplete="on">
         <div className="bh">
-          <h1>Sign up as a broker</h1>
+          <h1>Sign up as a consultant</h1>
           <p className="muted" style={{ margin: 0 }}>
             {whatsapp ? 'Verify your WhatsApp number and your email to create your account.' : 'Verify your email to create your account.'} After that, you log in with your password.
           </p>

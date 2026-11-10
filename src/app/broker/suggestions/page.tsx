@@ -1,27 +1,24 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { pageBroker } from '@/lib/auth';
-import { loadBrokerSuggestions } from '@/lib/services/brokerData';
+import { loadBrokerProperties, loadBrokerSuggestions, loadOpenRequirements } from '@/lib/services/brokerData';
+import { SuggestFromHere } from '@/components/broker/SuggestFromHere';
 import { fmtDate } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'My suggestions' };
 
 export default async function SuggestionsPage() {
   const { broker } = await pageBroker();
-  const list = await loadBrokerSuggestions(broker._id);
+  const [list, props, open] = await Promise.all([loadBrokerSuggestions(broker._id), loadBrokerProperties(broker._id), loadOpenRequirements()]);
   return (
     <main className="page">
       <h1>My suggestions</h1>
       <p className="lead">Every property you suggested for a requirement, and Abacus&apos;s response. A suggestion is a hint; Abacus decides every match.</p>
+      <SuggestFromHere properties={props} requirements={open.requirements} suggested={list.map((s) => `${s.propertyId}|${s.requirementId}`)} />
       {list.length === 0 ? (
         <div className="empty">
           <b>No suggestions yet</b>
-          Open a requirement and tap Suggest a property, or suggest from My properties.
-          <div style={{ marginTop: 12 }}>
-            <Link className="btn" href="/broker/requirements">
-              See requirements
-            </Link>
-          </div>
+          Pick one of your properties above and choose the requirements it fits.
         </div>
       ) : (
         <div className="tw">
@@ -39,9 +36,13 @@ export default async function SuggestionsPage() {
               {list.map((s) => (
                 <tr key={s.id}>
                   <td>
-                    <Link className="mono" href={`/broker/properties/${s.propertyId}/edit`}>
-                      {s.propertyCode}
-                    </Link>
+                    {s.propertyDeleted ? (
+                      <span className="mono">{s.propertyCode}</span>
+                    ) : (
+                      <Link className="mono" href={`/broker/properties/${s.propertyId}/edit`}>
+                        {s.propertyCode}
+                      </Link>
+                    )}
                   </td>
                   <td>
                     {s.requirementOpen ? (

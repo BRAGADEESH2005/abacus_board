@@ -55,8 +55,8 @@ export function brokerProperty(p: PropertyDoc, pitches: PitchDoc[]) {
     escalation: p.escalation,
     landlordName: p.landlordName,
     dealtWith: p.dealtWith,
-    goAheadFileId: p.goAheadFileId ? p.goAheadFileId.toString() : null,
-    goAheadFileName: p.goAheadFileName ?? '',
+    commissionConfirmed: p.commissionConfirmed ?? null,
+    commissionDays: p.commissionDays ?? null,
     powerKva: p.powerKva ?? null,
     powerBackup: p.powerBackup ?? null,
     lift: p.lift ?? null,
@@ -82,8 +82,9 @@ export function brokerProperty(p: PropertyDoc, pitches: PitchDoc[]) {
 }
 export type BrokerProperty = ReturnType<typeof brokerProperty>;
 
+/** The consultant's own properties, newest first. Listings the consultant deleted are left out. */
 export async function loadBrokerProperties(brokerId: Types.ObjectId) {
-  const props = await Property.find({ broker: brokerId }).sort({ createdAt: -1 }).lean<PropertyDoc[]>();
+  const props = await Property.find({ broker: brokerId, deletedAt: null }).sort({ createdAt: -1 }).lean<PropertyDoc[]>();
   const pitches = props.length ? await Pitch.find({ property: { $in: props.map((p) => p._id) } }).select('property stage stageNote createdAt').lean<PitchDoc[]>() : [];
   const byProp = new Map<string, PitchDoc[]>();
   for (const x of pitches) {
@@ -126,7 +127,7 @@ export function suggestionResponse(s: { status: string }) {
 export async function loadBrokerSuggestions(brokerId: Types.ObjectId) {
   const list = await Suggestion.find({ broker: brokerId }).sort({ createdAt: -1 }).lean<SuggestionDoc[]>();
   const [props, reqs] = await Promise.all([
-    Property.find({ _id: { $in: list.map((s) => s.property) } }).select('code microMarket city').lean<PropertyDoc[]>(),
+    Property.find({ _id: { $in: list.map((s) => s.property) } }).select('code microMarket city deletedAt').lean<PropertyDoc[]>(),
     Requirement.find({ _id: { $in: list.map((s) => s.requirement) } }).select('code microMarket city status').lean<RequirementDoc[]>(),
   ]);
   const pm = new Map(props.map((p) => [p._id.toString(), p]));
@@ -138,6 +139,7 @@ export async function loadBrokerSuggestions(brokerId: Types.ObjectId) {
       id: s._id.toString(),
       propertyId: s.property.toString(),
       propertyCode: p?.code ?? '',
+      propertyDeleted: Boolean(p?.deletedAt),
       requirementId: s.requirement.toString(),
       requirementCode: r?.code ?? '',
       requirementPlace: r ? `${r.microMarket}, ${r.city}` : '',

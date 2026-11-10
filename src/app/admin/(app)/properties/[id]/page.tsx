@@ -73,6 +73,7 @@ export default async function AdminProperty({ params }: { params: Promise<{ id: 
           Merged into <Link href={`/admin/properties/${merged._id}`}>{merged.code}</Link> (earlier upload of the same space).
         </div>
       )}
+      {p.deletedAt && <div className="notice amber" style={{ marginBottom: 12 }}>Deleted by the consultant on {fmtDateTime(p.deletedAt)}. Kept here for the record and out of matching.</div>}
       {p.listingStatus === 'needs_reconfirm' && <div className="notice amber" style={{ marginBottom: 12 }}>Not confirmed by the broker for 30 days. It is out of matching until the broker taps Still available.</div>}
       {st.stage === 'Not closed' && st.note && <div className="notice" style={{ marginBottom: 12 }}>Not closed: {st.note}</div>}
 
@@ -138,16 +139,24 @@ export default async function AdminProperty({ params }: { params: Promise<{ id: 
                   <dd>{p.landlordName}</dd>
                   <dt>Dealt with</dt>
                   <dd>{p.dealtWith}</dd>
-                  <dt>Go ahead</dt>
-                  <dd>
-                    {p.goAheadFileId ? (
-                      <a href={`/api/files/${p.goAheadFileId}`} target="_blank" rel="noreferrer">
-                        {p.goAheadFileName || 'Open document'}
-                      </a>
-                    ) : (
-                      <span style={{ color: 'var(--maroon)' }}>Not uploaded</span>
-                    )}
-                  </dd>
+                  <dt>Commission confirmed</dt>
+                  <dd>{p.commissionConfirmed == null ? '—' : p.commissionConfirmed ? 'Yes' : 'No'}</dd>
+                  {p.commissionConfirmed && (
+                    <>
+                      <dt>Commission</dt>
+                      <dd>{val(p.commissionDays, ' days of rent')}</dd>
+                    </>
+                  )}
+                  {p.goAheadFileId && (
+                    <>
+                      <dt>Go ahead (old upload)</dt>
+                      <dd>
+                        <a href={`/api/files/${p.goAheadFileId}`} target="_blank" rel="noreferrer">
+                          {p.goAheadFileName || 'Open document'}
+                        </a>
+                      </dd>
+                    </>
+                  )}
                 </dl>
               </div>
               <div className="block">

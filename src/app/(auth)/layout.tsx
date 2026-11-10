@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </Link>
           <span className="t">
             <b>Requirement Board</b>
-            <span>Broker access</span>
+            <span>Consultant access</span>
           </span>
         </div>
       </header>

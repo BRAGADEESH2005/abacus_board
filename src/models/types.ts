@@ -112,6 +112,7 @@ export interface SettingsDoc {
   sopShare: string;
   notesHelp: string;
   measureVideoUrl: string;
+  drawVideoUrl: string;
   levels: { key: string; name: string; threshold: number }[];
 }
 
@@ -239,6 +240,8 @@ export interface PropertyDoc {
   dealtWith: string;
   goAheadFileId: Id | null;
   goAheadFileName: string;
+  commissionConfirmed: boolean | null;
+  commissionDays: number | null;
   powerKva: number | null;
   powerBackup: boolean | null;
   lift: boolean | null;
@@ -257,6 +260,7 @@ export interface PropertyDoc {
   notes: string;
   listingStatus: 'available' | 'needs_reconfirm' | 'let_out' | 'withdrawn';
   lastConfirmedAt: Date | null;
+  deletedAt: Date | null;
   staleCount: number;
   adminStage: string;
   adminStageNote: string;

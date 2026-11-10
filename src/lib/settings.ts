@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { Settings, type SettingsDoc } from '@/models';
 
 /** Starting city list. Cities marked enabled are the broker sign up list from Broker Side Changes v2;
@@ -94,7 +95,10 @@ export async function ensureSettings(): Promise<void> {
   });
 }
 
-export async function getSettings(): Promise<SettingsDoc> {
+/** One settings read per request, however many components ask for it. */
+export const getSettings = cache(readSettings);
+
+async function readSettings(): Promise<SettingsDoc> {
   let s = await Settings.findById('global').lean<SettingsDoc>();
   if (!s) {
     await ensureSettings();

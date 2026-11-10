@@ -14,9 +14,8 @@ import { Admin } from '@/models';
  * - Seeds the Settings document (cities, micro markets, SOP text, weekly target).
  */
 export async function bootstrap(): Promise<void> {
-  await Promise.all(Object.values(mongoose.models).map((m) => m.init()));
-  await syncAdmins();
-  await ensureSettings();
+  // Run side by side: on a cold start this saves a few database round trips.
+  await Promise.all([...Object.values(mongoose.models).map((m) => m.init()), syncAdmins(), ensureSettings()]);
 }
 
 export async function syncAdmins(): Promise<void> {

@@ -1,6 +1,7 @@
 import 'server-only';
 import nodemailer, { type Transporter } from 'nodemailer';
 import { getEnv } from './env';
+import { digestLines, type Digest } from './digest';
 
 let transporter: Transporter | null = null;
 
@@ -84,11 +85,31 @@ export async function sendRequirementAlert(to: string, name: string, rows: Alert
     .join('');
   await sendMail(
     to,
-    rows.length === 1 ? `New requirement in ${rows[0].location}` : `${rows.length} new requirements in your cities`,
-    'New requirements in your cities',
+    rows.length === 1 ? `New requirement in ${rows[0].location}` : `${rows.length} new requirements in your city`,
+    'New requirements in your city',
     `<p>Hi ${esc(name)}, Abacus just posted ${rows.length === 1 ? 'a requirement' : `${rows.length} requirements`} where you work. If you know a fitting property, post it and suggest it.</p>
      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>
      <p style="margin-top:16px"><a href="${esc(appUrl)}/broker/requirements" style="background:#7F1416;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:bold;font-size:14px">See all requirements</a></p>`,
-    `Hi ${name}, new requirements in your cities:\n\n${rows.map((r) => `${r.code} ${r.location}: ${r.sector}, ${r.carpet}, ${r.rent}, ${r.specs}\n${r.url}`).join('\n\n')}`,
+    `Hi ${name}, new requirements in your city:\n\n${rows.map((r) => `${r.code} ${r.location}: ${r.sector}, ${r.carpet}, ${r.rent}, ${r.specs}\n${r.url}`).join('\n\n')}`,
+  );
+}
+
+/** Weekly activity summary to each consultant (sent even when nothing was uploaded that week). */
+export async function sendWeeklyDigest(to: string, name: string, d: Digest, appUrl: string) {
+  const lines = digestLines(d);
+  const nudgeUrl = `${appUrl}${d.nudge.href}`;
+  const intro = d.quiet
+    ? 'Nothing was uploaded from your account in the last 7 days. Here is what is waiting for you on the board.'
+    : `You uploaded ${d.uploadedWeek === 1 ? '1 property' : `${d.uploadedWeek} properties`} in the last 7 days. Here is your week on the board.`;
+  const items = lines.map((l) => `<li style="margin:4px 0">${esc(l)}</li>`).join('');
+  await sendMail(
+    to,
+    d.quiet ? `Your week on the Abacus board: ${d.drafts} drafts pending, ${d.unservedInCity} requirements need a property` : `Your week on the Abacus board: ${d.uploadedWeek} uploaded`,
+    'Your weekly summary',
+    `<p style="margin:0 0 12px">Hi ${esc(name)}, ${esc(intro)}</p>
+     <ul style="margin:0 0 14px;padding-left:18px;font-size:14px">${items}</ul>
+     <p style="margin:0 0 16px;font-weight:bold">${esc(d.nudge.text)}</p>
+     <p style="margin:0"><a href="${esc(nudgeUrl)}" style="background:#7F1416;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:bold;font-size:14px">Open the board</a></p>`,
+    `Hi ${name}, ${intro}\n\n${lines.map((l) => `- ${l}`).join('\n')}\n\n${d.nudge.text}\n${nudgeUrl}`,
   );
 }

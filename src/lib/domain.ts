@@ -191,6 +191,14 @@ export type PropertyLike = Record<string, unknown> & {
   floorPlan?: unknown;
 };
 
+/** C7 is required: either a floor plan Drive link, or every floor drawn with the tool (at least 3 corners). */
+export function hasFloorPlanInput(p: PropertyLike): boolean {
+  const link = typeof p.floorPlanLink === 'string' ? p.floorPlanLink.trim() : '';
+  if (link) return true;
+  const fp = p.floorPlan as { plans?: { points?: unknown[] }[] } | null | undefined;
+  return Boolean(fp?.plans?.length && fp.plans.every((pl) => Array.isArray(pl?.points) && pl.points.length >= 3));
+}
+
 /** Required fields for submitting (Broker v2, section 4), with conditional rules from section 5. */
 export function missingRequired(p: PropertyLike): string[] {
   const miss: string[] = [];
@@ -210,6 +218,7 @@ export function missingRequired(p: PropertyLike): string[] {
   const areas = (p.floorAreas as number[] | undefined) ?? [];
   if (floors.length && floors.some((_, i) => !areas[i] || areas[i]! <= 0)) miss.push('Carpet area of each floor');
   need('ceilingHeight', 'Ground to ceiling height');
+  if (!hasFloorPlanInput(p)) miss.push('Floor plan (Drive link or drawing)');
   need('frontage', 'Frontage');
   need('rent', 'Quoted rent');
   need('depositMonths', 'Security deposit');

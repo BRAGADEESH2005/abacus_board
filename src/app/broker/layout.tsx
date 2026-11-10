@@ -19,7 +19,7 @@ export default async function BrokerLayout({ children }: { children: React.React
           </Link>
           <span className="t">
             <b>Requirement Board</b>
-            <span>Broker</span>
+            <span>Consultant</span>
           </span>
           <div className="who">
             <UserMenu

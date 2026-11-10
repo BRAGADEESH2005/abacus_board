@@ -26,6 +26,7 @@ export default async function SettingsPage() {
           sopShare: settings.sopShare,
           notesHelp: settings.notesHelp,
           measureVideoUrl: settings.measureVideoUrl,
+          drawVideoUrl: settings.drawVideoUrl ?? '',
           levels: settings.levels.map((l) => ({ key: l.key, name: l.name, threshold: l.threshold })),
         }}
       />

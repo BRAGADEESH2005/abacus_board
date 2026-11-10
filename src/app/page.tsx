@@ -28,14 +28,14 @@ export default async function Home() {
           <img src="/abacus-logo.png" alt="" />
           <h1>Where Abacus needs retail space, right now</h1>
           <p className="lead" style={{ margin: '0 auto 22px' }}>
-            Abacus Spaces posts live retail requirements across Tamil Nadu, Karnataka and Kerala. Partner brokers post the properties they hold, and Abacus matches them to brands.
+            Abacus Spaces posts live retail requirements across Tamil Nadu, Karnataka and Kerala. Partner consultants post the properties they hold, and Abacus matches them to brands.
           </p>
           <div className="row-flex" style={{ justifyContent: 'center' }}>
             <Link className="btn primary" href="/signup">
-              Sign up as a broker
+              Sign up as a consultant
             </Link>
             <Link className="btn" href="/login">
-              Broker login
+              Consultant login
             </Link>
           </div>
           <p className="muted" style={{ marginTop: 28 }}>

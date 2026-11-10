@@ -218,6 +218,8 @@ export const propertyDraftSchema = z
     escalation: optStr(120),
     landlordName: optStr(120),
     dealtWith: enumOrEmpty(DEALT_WITH),
+    commissionConfirmed: yesNo,
+    commissionDays: optNum('Commission days', 365),
     powerKva: optNum('Total power', 100000),
     powerBackup: yesNo,
     lift: yesNo,
@@ -274,6 +276,7 @@ export const settingsTextSchema = z.object({
   sopShare: str(2000).default(''),
   notesHelp: str(3000).default(''),
   measureVideoUrl: z.string().trim().max(600).refine((v) => !v || /^https:\/\//.test(v), 'Use an https link').default(''),
+  drawVideoUrl: z.string().trim().max(600).refine((v) => !v || /^https:\/\//.test(v), 'Use an https link').default(''),
   levels: z
     .array(z.object({ key: z.enum(['scout', 'pro', 'partner', 'elite']), name: str(30).min(1), threshold: z.coerce.number().int().min(0).max(1000) }))
     .length(4),

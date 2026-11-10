@@ -6,7 +6,7 @@ import { whatsappEnabled } from '@/lib/env';
 import { getSettings } from '@/lib/settings';
 import { SignupForm } from '@/components/auth/SignupForm';
 
-export const metadata: Metadata = { title: 'Broker sign up' };
+export const metadata: Metadata = { title: 'Consultant sign up' };
 export const dynamic = 'force-dynamic';
 
 export default async function SignupPage() {

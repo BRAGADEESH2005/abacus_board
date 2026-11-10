@@ -19,7 +19,7 @@ export const POST = handler(async (req) => {
   await connectDB();
   const s = await apiBroker();
   const { pairs, note } = await parseBody(req, schema);
-  const props = await Property.find({ _id: { $in: pairs.map((p) => p.propertyId) } }).select('broker state listingStatus code').lean();
+  const props = await Property.find({ _id: { $in: pairs.map((p) => p.propertyId) } }).select('broker state listingStatus code deletedAt').lean();
   const reqs = await Requirement.find({ _id: { $in: pairs.map((p) => p.requirementId) } }).select('status code microMarket city').lean();
   const pm = new Map(props.map((p) => [String(p._id), p]));
   const rm = new Map(reqs.map((r) => [String(r._id), r]));
@@ -28,7 +28,7 @@ export const POST = handler(async (req) => {
   for (const pair of pairs) {
     const p = pm.get(pair.propertyId);
     const r = rm.get(pair.requirementId);
-    if (!p || String(p.broker) !== String(s.broker._id)) throw new ApiError(403, 'You can only suggest your own properties.');
+    if (!p || String(p.broker) !== String(s.broker._id) || p.deletedAt) throw new ApiError(403, 'You can only suggest your own properties.');
     if (p.state !== 'submitted') throw new ApiError(409, `${p.code} is still a draft. Post it first.`);
     if (p.listingStatus !== 'available') throw new ApiError(409, `${p.code} is not an active listing. Mark it available first.`);
     if (!r || r.status !== 'open') throw new ApiError(409, 'That requirement is no longer open.');

@@ -17,15 +17,14 @@ export default async function EditProperty({ params, searchParams }: { params: P
   const sp = await searchParams;
   if (!isId(id)) notFound();
   const doc = await Property.findById(id).lean<PropertyDoc>();
-  if (!doc || String(doc.broker) !== String(broker._id)) notFound();
-  const pitches = await Pitch.find({ property: doc._id }).select('stage stageNote createdAt property').lean<PitchDoc[]>();
+  if (!doc || String(doc.broker) !== String(broker._id) || doc.deletedAt) notFound();
+  const [pitches, settings, r] = await Promise.all([
+    Pitch.find({ property: doc._id }).select('stage stageNote createdAt property').lean<PitchDoc[]>(),
+    getSettings(),
+    sp.suggestFor && isId(sp.suggestFor) ? Requirement.findById(sp.suggestFor).select('code status').lean() : Promise.resolve(null),
+  ]);
   const p = brokerProperty(doc, pitches);
-  const settings = await getSettings();
-  let suggestFor: { id: string; code: string } | null = null;
-  if (sp.suggestFor && isId(sp.suggestFor)) {
-    const r = await Requirement.findById(sp.suggestFor).select('code status').lean();
-    if (r && r.status === 'open') suggestFor = { id: String(r._id), code: r.code };
-  }
+  const suggestFor: { id: string; code: string } | null = r && r.status === 'open' ? { id: String(r._id), code: r.code } : null;
   if (doc.state === 'merged') {
     return (
       <main className="page narrow">
@@ -58,6 +57,7 @@ export default async function EditProperty({ params, searchParams }: { params: P
         locations={locationLists(settings)}
         texts={{ sopIntro: settings.sopIntro, sopShots: settings.sopShots, sopFolders: settings.sopFolders, sopShare: settings.sopShare, sopLink: settings.sopLink, notesHelp: settings.notesHelp }}
         measureVideoUrl={settings.measureVideoUrl}
+        drawVideoUrl={settings.drawVideoUrl ?? ''}
         suggestFor={suggestFor}
       />
     </main>

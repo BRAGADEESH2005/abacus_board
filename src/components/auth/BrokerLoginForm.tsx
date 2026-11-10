@@ -30,7 +30,7 @@ export function BrokerLoginForm() {
     <div className="auth">
       <form className="box" onSubmit={submit} method="post" action="/api/auth/login">
         <div className="bh">
-          <h1>Broker login</h1>
+          <h1>Consultant login</h1>
           <p className="muted" style={{ margin: 0 }}>Use your username, phone or email with your password.</p>
         </div>
         <div className="bb">

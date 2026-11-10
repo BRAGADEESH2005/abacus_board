@@ -15,7 +15,7 @@ export function hasFloorPlan(p: PropertyDoc): boolean {
 export async function computeLevel(broker: BrokerDoc) {
   const s = await getSettings();
   const th = (k: string, d: number) => s.levels.find((l) => l.key === k)?.threshold ?? d;
-  const props = await Property.find({ broker: broker._id, state: 'submitted' }).lean<PropertyDoc[]>();
+  const props = await Property.find({ broker: broker._id, state: 'submitted', deletedAt: null }).lean<PropertyDoc[]>();
   const complete = props.filter((p) => missingRequired(p as never).length === 0 && p.lat != null && hasFloorPlan(p)).length;
   const ids = props.map((p) => p._id);
   const pitches = ids.length ? await Pitch.find({ property: { $in: ids } }).select('property stage').lean<{ property: unknown; stage: string }[]>() : [];
